@@ -41,6 +41,7 @@ jobs:
           #__version="${{ matrix.dockerfile }}"
           #echo "version=$(echo $__version | sed 's/^Dockerfile\.//g')" >> $GITHUB_OUTPUT
           echo "version=latest" >> $GITHUB_OUTPUT
+          echo "repo=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
         shell: bash
 
       - name: Build and Publish
@@ -49,4 +50,4 @@ jobs:
           file: ${{ matrix.dockerfile }}
           platforms: linux/amd64
           push: true
-          tags: ghcr.io/${{ github.repository }}:${{ steps.extract_version.outputs.version }}
+          tags: ghcr.io/${{ steps.extract_version.outputs.repo }}:${{ steps.extract_version.outputs.version }}
