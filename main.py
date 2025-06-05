@@ -60,7 +60,7 @@ async def start_bot() -> None:
     if not token:
         print("DISCORD_TOKEN is not set!")
         sys.exit(1)
-    bot.database = await asqlite.connect("data.db")
+    bot.database = await asqlite.connect("data/data.db")
     await migrate_db_if_needed()
     await client.login(token)
     await publisher.restart()
