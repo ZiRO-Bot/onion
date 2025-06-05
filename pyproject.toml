@@ -1,0 +1,10 @@
+[project]
+name = "onion"
+version = "0.0.1"
+description = "Anime-focused Discord Bot"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "asqlite>=2.0.0",
+    "discord-py>=2.5.2",
+]

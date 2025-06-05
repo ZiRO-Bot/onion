@@ -1,0 +1,11 @@
+node_modules/*
+
+*.db*
+
+*.json
+*.pyc
+*.log
+venv/*
+.venv/*
+*.sublime-*
+config.py
