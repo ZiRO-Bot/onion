@@ -108,8 +108,8 @@ async def get_latest_schedule():
     log = logging.getLogger()
 
     query = """
-    query($weekStart: Int, $weekEnd: Int) {
-      Page {
+    query($page: Int, $weekStart: Int, $weekEnd: Int) {
+      Page(page: $page) {
         airingSchedules(notYetAired: true, airingAt_greater: $weekStart, airingAt_lesser: $weekEnd, sort: TIME) {
           id
           media {
@@ -132,30 +132,43 @@ async def get_latest_schedule():
     dt = utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     start = dt - datetime.timedelta(days=dt.weekday())
     end = (start + datetime.timedelta(days=6)).replace(hour=23, minute=59, second=59)
-    variables = {
-        "weekStart": start.timestamp(),
-        "weekEnd": end.timestamp(),
-    }
     earliest_airing_at: int | None = None
     async with aiohttp.ClientSession() as session:
-        async with session.post("https://graphql.anilist.co/", json={ "query": query, "variables": variables }) as resp:
-            data = await resp.json()
-            schedules = data["data"]["Page"]["airingSchedules"]
-            async with bot.database.transaction():
-                for i in schedules:
-                    current_airing_at: int = i["airingAt"]
-                    await bot.database.execute(
-                        "INSERT OR IGNORE INTO releases (id, title, episode, thumbnail_url, publish_at, published) VALUES (?, ?, ?, ?, ?, 0)",
-                        (
-                            i["id"],
-                            i["media"]["title"]["romaji"],
-                            i["episode"],
-                            i["media"]["coverImage"]["large"],
-                            current_airing_at,
-                        ),
-                    )
-                    if not earliest_airing_at or current_airing_at < earliest_airing_at:
-                        earliest_airing_at = current_airing_at
+        page = 1
+        should_continue = True
+        while should_continue:
+            log.info(f"Fetching new releases... (Page {page})")
+
+            variables = {
+                "weekStart": start.timestamp(),
+                "weekEnd": end.timestamp(),
+                "page": page,
+            }
+            async with session.post("https://graphql.anilist.co/", json={ "query": query, "variables": variables }) as resp:
+                data = await resp.json()
+
+                try:
+                    should_continue = data["data"]["Page"]["pageInfo"]["hasNextPage"]
+                except:
+                    should_continue = False
+                page += 1
+
+                schedules = data["data"]["Page"]["airingSchedules"]
+                async with bot.database.transaction():
+                    for i in schedules:
+                        current_airing_at: int = i["airingAt"]
+                        await bot.database.execute(
+                            "INSERT OR IGNORE INTO releases (id, title, episode, thumbnail_url, publish_at, published) VALUES (?, ?, ?, ?, ?, 0)",
+                            (
+                                i["id"],
+                                i["media"]["title"]["romaji"],
+                                i["episode"],
+                                i["media"]["coverImage"]["large"],
+                                current_airing_at,
+                            ),
+                        )
+                        if not earliest_airing_at or current_airing_at < earliest_airing_at:
+                            earliest_airing_at = current_airing_at
     if earliest_airing_at is None:
         return
 
