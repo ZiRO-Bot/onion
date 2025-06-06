@@ -118,7 +118,7 @@ async def get_latest_schedule():
     """
     dt = utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     start = dt - datetime.timedelta(days=dt.weekday())
-    end = start + datetime.timedelta(days=6)
+    end = (start + datetime.timedelta(days=6)).replace(hour=23, minute=59, second=59)
     variables = {
         "weekStart": start.timestamp(),
         "weekEnd": end.timestamp(),
