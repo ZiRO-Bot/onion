@@ -1,9 +1,10 @@
-import asyncio
-import os
 import asqlite
-import discord
-import sys
+import asyncio
 import bot
+import discord
+import os
+import sys
+import re
 from bot import bot_owner_id, client, tree, database_required
 from src import publisher
 
@@ -21,7 +22,11 @@ async def on_message(message: discord.Message) -> None:
     if (message.author.id != bot_owner_id):
         return
 
-    if (message.content.startswith("!sync")):
+    bot_user = client.user
+    if not bot_user:
+        return
+    pattern = f"<@(!?){bot_user.id}> sync"
+    if re.fullmatch(pattern, message.content):
         synced = await tree.sync()
         _ = await message.reply(f"{len(synced)} command(s) has been sync")
 
