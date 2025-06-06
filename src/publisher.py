@@ -97,7 +97,7 @@ async def get_latest_schedule():
     query = """
     query($weekStart: Int, $weekEnd: Int) {
       Page {
-        airingSchedules(notYetAired: true, airingAt_greater: $weekStart, airingAt_lesser: $weekEnd) {
+        airingSchedules(notYetAired: true, airingAt_greater: $weekStart, airingAt_lesser: $weekEnd, sort: TIME) {
           id
           media {
             title {
