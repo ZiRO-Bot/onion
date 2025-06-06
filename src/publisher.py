@@ -46,7 +46,6 @@ async def dispatch() -> None:
     try:
         while not client.is_closed():
             release = current_release = await wait(days=7)
-            print(release)
             if not release:
                 await restart()
                 break
@@ -124,12 +123,14 @@ async def get_latest_schedule():
         "weekStart": start.timestamp(),
         "weekEnd": end.timestamp(),
     }
+    earliest_airing_at: int | None = None
     async with aiohttp.ClientSession() as session:
         async with session.post("https://graphql.anilist.co/", json={ "query": query, "variables": variables }) as resp:
             data = await resp.json()
             schedules = data["data"]["Page"]["airingSchedules"]
             async with bot.database.transaction():
                 for i in schedules:
+                    current_airing_at: int = i["airingAt"]
                     await bot.database.execute(
                         "INSERT OR IGNORE INTO releases (id, title, episode, thumbnail_url, publish_at, published) VALUES (?, ?, ?, ?, ?, 0)",
                         (
@@ -137,9 +138,21 @@ async def get_latest_schedule():
                             i["media"]["title"]["romaji"],
                             i["episode"],
                             i["media"]["coverImage"]["large"],
-                            i["airingAt"],
+                            current_airing_at,
                         ),
                     )
+                    if not earliest_airing_at:
+                        earliest_airing_at = current_airing_at
+                    elif current_airing_at < earliest_airing_at:
+                        earliest_airing_at = current_airing_at
+    if earliest_airing_at is None:
+        return
+
+    have_data.set()
+    if current_release and earliest_airing_at < int(current_release.publish_at.timestamp()):
+        # This is unlikely to happened, but just in case...
+        print("Found earlier release, restarting...")
+        await restart()
 
 async def schedules(interaction: discord.Interaction):
     rows = await bot.database.fetchall(f"SELECT * FROM releases WHERE published == 0 ORDER BY publish_at")
