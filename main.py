@@ -28,7 +28,7 @@ async def on_message(message: discord.Message) -> None:
     pattern = f"<@(!?){bot_user.id}> sync"
     if re.fullmatch(pattern, message.content):
         synced = await tree.sync()
-        _ = await message.reply(f"{len(synced)} command(s) has been sync")
+        await message.reply(f"{len(synced)} command(s) has been sync")
 
 @client.event
 async def on_ready() -> None:
@@ -65,6 +65,9 @@ async def start_bot() -> None:
     if not token:
         print("DISCORD_TOKEN is not set!")
         sys.exit(1)
+
+    await publisher.register_commands()
+
     bot.database = await asqlite.connect("data/data.db")
     await migrate_db_if_needed()
     await client.login(token)

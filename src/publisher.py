@@ -4,7 +4,7 @@ import bot
 import datetime
 import discord
 import os
-from bot import client, database_required
+from bot import client, database_required, tree
 from dataclasses import dataclass
 from discord.utils import utcnow
 from discord.ext import tasks
@@ -140,3 +140,23 @@ async def get_latest_schedule():
                             i["airingAt"],
                         ),
                     )
+
+async def schedules(interaction: discord.Interaction):
+    rows = await bot.database.fetchall(f"SELECT * FROM releases WHERE published == 0 ORDER BY publish_at")
+    data = [row["title"] for row in rows]
+    await interaction.response.send_message(data, ephemeral=True)
+
+async def fetch_schedules(interaction: discord.Interaction):
+    await get_latest_schedule()
+    await interaction.response.send_message("Fetching...", ephemeral=True)
+
+async def register_commands():
+    def command(name: str, callback, description: str = "..."):
+        return discord.app_commands.Command(
+            name = name,
+            description = description,
+            callback = callback,
+        )
+
+    tree.add_command(command("schedules", callback=schedules))
+    tree.add_command(command("fetch-schedules", callback=fetch_schedules))
