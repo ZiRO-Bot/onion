@@ -137,7 +137,7 @@ async def get_latest_schedule():
     """
     dt = utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     start = dt - datetime.timedelta(days=dt.weekday())
-    end = (start + datetime.timedelta(days=6)).replace(hour=23, minute=59, second=59)
+    end = (start + datetime.timedelta(days=7)).replace(hour=23, minute=59, second=59)
     earliest_airing_at: int | None = None
     async with aiohttp.ClientSession() as session:
         page = 1
