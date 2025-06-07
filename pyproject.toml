@@ -1,8 +1,9 @@
 [project]
 name = "onion"
-version = "0.0.1"
+version = "2025.0.0"
 description = "Anime-focused Discord Bot"
 readme = "README.md"
+license = "MPL-2.0"
 requires-python = ">=3.12"
 dependencies = [
     "asqlite>=2.0.0",
