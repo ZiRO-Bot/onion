@@ -7,7 +7,7 @@ An anime-focused discord bot, this is a toy project that are made to challenge m
 Unless stated otherwise, this project is licensed under the Mozilla Public License, v. 2.0:
 
 ```
-Copyright © 2024 null2264
+Copyright © 2025 null2264
 
 This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
