@@ -12,20 +12,19 @@ import asyncio
 import bot
 import discord
 import os
-import sys
 import re
 from bot import bot_owner_id, client, tree, database_required
 from src import publisher
 from logging.handlers import RotatingFileHandler
 
 
-token = os.environ.get("DISCORD_TOKEN")
-try:
-    import config
-    token = token or config.token
-except ImportError:
-    print("Unable to load config")
-
+@tree.command()
+@bot.is_me()
+async def sync(interaction: discord.Interaction):
+    """Sync the commands
+    """
+    synced = await tree.sync()
+    await interaction.response.send_message(f"{len(synced)} command(s) has been sync")
 
 @client.event
 async def on_message(message: discord.Message) -> None:
@@ -112,16 +111,13 @@ async def migrate_db_if_needed() -> None:
     await bot.database.execute(f"PRAGMA user_version = {migration_version}")
 
 async def start_bot() -> None:
-    log = logging.getLogger()
-    if not token:
-        log.exception("DISCORD_TOKEN is not set!")
-        sys.exit(1)
+    bot.check_config()
 
     await publisher.register_commands()
 
     bot.database = await asqlite.connect("data/data.db")
     await migrate_db_if_needed()
-    await client.login(token)
+    await client.login(bot.token)
     await publisher.restart()
     publisher.get_latest_schedule.start()
     await client.connect()

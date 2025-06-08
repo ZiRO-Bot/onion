@@ -13,6 +13,7 @@ import discord
 import os
 from bot import client, database_required, tree
 from dataclasses import dataclass
+from discord import app_commands
 from discord.utils import utcnow
 from discord.ext import tasks
 
@@ -27,7 +28,6 @@ class ReleaseData:
     published: bool
 
 
-publish_channel_id = int(os.environ.get("DISCORD_PUBLISH_CHANNEL") or "0")
 current_release: ReleaseData | None = None
 task: asyncio.Task[None] | None = None
 have_data = asyncio.Event()
@@ -49,7 +49,7 @@ def create_embed(data: ReleaseData) -> discord.Embed:
     return embed
 
 async def publish_release(data: ReleaseData) -> None:
-    channel = client.get_partial_messageable(publish_channel_id)
+    channel = client.get_partial_messageable(bot.publish_channel_id)
     embed = create_embed(data)
     embed.description = f"Episode {data.episode} just released!"
     await channel.send(embeds=[embed])
@@ -237,7 +237,11 @@ class ScheduleView(discord.ui.View):
 #endregion
 
 #region Commands
+@app_commands.command()
 async def schedules(interaction: discord.Interaction):
+    """Get current anime release schedule
+    """
+
     rows = await bot.database.fetchall(f"SELECT * FROM releases WHERE published == 0 ORDER BY publish_at")
     data = [
         ReleaseData(
@@ -254,18 +258,15 @@ async def schedules(interaction: discord.Interaction):
     embed = view.render()
     await interaction.response.send_message(embeds=[embed], view=view)
 
+@app_commands.command(name="fetch-schedules")
+@app_commands.default_permissions(manage_messages=True)
 async def fetch_schedules(interaction: discord.Interaction):
+    """Fetch anime release schedule from AniList
+    """
     await get_latest_schedule()
     await interaction.response.send_message("Fetching...", ephemeral=True)
 
 async def register_commands():
-    def command(name: str, callback, description: str = "..."):
-        return discord.app_commands.Command(
-            name = name,
-            description = description,
-            callback = callback,
-        )
-
-    tree.add_command(command("schedules", description="Get current anime release schedule", callback=schedules))
-    tree.add_command(command("fetch-schedules", description="Fetch anime release schedule from AniList", callback=fetch_schedules))
+    tree.add_command(schedules)
+    tree.add_command(fetch_schedules)
 #endregion
